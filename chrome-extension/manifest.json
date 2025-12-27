@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "LaTeX to Image for Gmail",
+  "version": "1.0",
+  "description": "Convert LaTeX code to images in Gmail using right-click context menu",
+  "permissions": [
+    "contextMenus",
+    "activeTab"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://mail.google.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+}
