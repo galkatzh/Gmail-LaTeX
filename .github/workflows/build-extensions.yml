@@ -1,0 +1,60 @@
+name: Build Browser Extensions
+
+on:
+  push:
+    branches:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Build Chrome Extension
+        run: |
+          # Copy manifest-chrome.json as manifest.json
+          cp manifest-chrome.json manifest.json
+
+          # Create zip with all necessary files
+          zip -r chrome_ext.zip \
+            manifest.json \
+            background.js \
+            content.js \
+            icon16.png \
+            icon48.png \
+            icon128.png
+
+          # Remove temporary manifest.json
+          rm manifest.json
+
+      - name: Build Firefox Extension
+        run: |
+          # Copy manifest-firefox.json as manifest.json
+          cp manifest-firefox.json manifest.json
+
+          # Create zip with all necessary files
+          zip -r firefox_ext.zip \
+            manifest.json \
+            background.js \
+            content.js \
+            icon16.png \
+            icon48.png \
+            icon128.png
+
+          # Remove temporary manifest.json
+          rm manifest.json
+
+      - name: Upload Chrome Extension
+        uses: actions/upload-artifact@v3
+        with:
+          name: chrome-extension
+          path: chrome_ext.zip
+
+      - name: Upload Firefox Extension
+        uses: actions/upload-artifact@v3
+        with:
+          name: firefox-extension
+          path: firefox_ext.zip
