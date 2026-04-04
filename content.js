@@ -5,7 +5,50 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
+// Apply preamble \newcommand replacements to LaTeX code.
+// For commands with arguments, matches \cmd{arg1}{arg2}... and substitutes #1, #2, etc.
+// For commands without arguments, replaces \cmd directly.
+function applyPreambleCommands(latexCode, commands) {
+  for (const cmd of commands) {
+    if (cmd.argCount === 0) {
+      // Simple replacement: \shortcut -> body
+      // Use word boundary after command name to avoid partial matches
+      const escaped = cmd.name.replace(/\\/g, '\\\\');
+      const pattern = new RegExp(escaped + '(?![a-zA-Z])', 'g');
+      latexCode = latexCode.replace(pattern, cmd.body);
+    } else {
+      // Command with arguments: \cmd{arg1}{arg2}...
+      const escaped = cmd.name.replace(/\\/g, '\\\\');
+      // Build pattern for N brace-delimited arguments
+      let argPattern = escaped;
+      for (let i = 0; i < cmd.argCount; i++) {
+        argPattern += '\\{([^}]*)\\}';
+      }
+      const pattern = new RegExp(argPattern, 'g');
+      latexCode = latexCode.replace(pattern, (...match) => {
+        let result = cmd.body;
+        for (let i = 1; i <= cmd.argCount; i++) {
+          result = result.split(`#${i}`).join(match[i]);
+        }
+        return result;
+      });
+    }
+  }
+  return latexCode;
+}
+
 function insertLatexImage(latexCode) {
+  // Load preamble commands, apply replacements, then render
+  chrome.storage.local.get('preambleCommands', (data) => {
+    const commands = data.preambleCommands || [];
+    if (commands.length > 0) {
+      latexCode = applyPreambleCommands(latexCode, commands);
+    }
+    renderLatexImage(latexCode);
+  });
+}
+
+function renderLatexImage(latexCode) {
   // URL encode the LaTeX code for the CodeCogs API
   const encodedLatex = encodeURIComponent(latexCode);
   const imageUrl = `https://latex.codecogs.com/png.image?${encodedLatex}`;
